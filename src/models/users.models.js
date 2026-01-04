@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema({
     },
     coverImage:{
         type:String, // Cloudinary url     
-        required:true
+        
     },
     passowrd:{
         type:String,
@@ -76,4 +76,5 @@ userSchema.methods.generateRefreshToken = function(){
 
 
 
-const User = mongoose.model('User', userSchema);
+  const User = mongoose.model('User', userSchema);
+  export default User 
