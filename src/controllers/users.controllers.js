@@ -172,9 +172,84 @@ const refreshAccessToken = asyncHandler(async(req,res) => {
     .json(new ApiResponse(200,{accessToken,refreshToken:newRefreshToken},"Access token refreshed"))
 
 
-
-
-     
 })
 
-export {registerUser,loginUser,logoutUser,refreshAccessToken}
+const changeCurrentPassword = asyncHandler(async (req,res) => {
+     const {currentPassword,newPassword} = req.body
+     if(!(currentPassword || newPassword)){
+          throw new ApiError(401,"CurrentPassword and newPassword is required")
+     }
+
+    const user = await User.findById(req.user._id)
+
+    if(!user){
+     throw new ApiError(401,"User doesn't exist")
+    }
+
+    const response =  await user.comparePassword(currentPassword);
+    if(!response){
+     throw new ApiError(401,"Current password is incorrect!")
+    }
+
+    user.password = newPassword
+    await user.save({validateBeforeSave:false})
+
+    return res
+    .status(200)
+    .json(new ApiResponse(201,{},"Password changed Successfully"))
+
+
+})
+
+
+const getCurrentUser = asyncHandler(async(req,res) => {
+     return res.status(200).json(req.user)
+})
+
+const updateAccountDetails = asyncHandler(async(req,res) => {
+     const {fullName,email}= req.body
+
+     const updatedUser = await User.findByIdAndUpdate(req.user._id,{$set:{fullName,email}},{new:true}).select("-password");
+
+     return res.status(200).json(new ApiResponse(200,updatedUser,"Account updated succesfully"))
+
+})
+
+const updateUserAvatar = asyncHandler(async (req,res) => {
+    const avatarLocalPath =  req.file?.path;
+    if(!avatarLocalPath){
+     throw new ApiError(401,"Avatar file is required")
+    }
+    const updatedAvatar = await uploadFile(avatarLocalPath)
+    if(!updatedAvatar.url){
+     throw new ApiError(401,"Error while uploading the file")
+    }
+
+    const response = await User.findByIdAndUpdate(req.user._id,{$set:{avatar:updatedAvatar.url}},{new:true}).select("-password");
+
+    return res.status(200).json(new ApiResponse(200,{},"Updated user Avatar succesfully"))
+
+})
+
+const updateUserCoverImage = asyncHandler(async(req,res) => {
+     const coverImageLocalPath = req.file?.path
+     if(!coverImageLocalPath){
+          throw new ApiError(401,"Coverimage file is required")
+     }
+     const updatedCoverImage = await uploadFile(coverImageLocalPath)
+     if(!updatedCoverImage.url){
+          throw new ApiError(401,"Error while uploadig the file")
+     }
+
+     const response = await User.findByIdAndUpdate(req.user._id,{$set:{coverImage:response.url}},{new:true}).select("-password");
+
+     res.status(200).json(new ApiResponse(200,{},"updated user CoverImage successfully"))
+
+
+
+
+
+})
+
+
+export {registerUser,loginUser,logoutUser,refreshAccessToken,changeCurrentPassword,getCurrentUser,updateAccountDetails,updateUserAvatar,updateUserCoverImage}
